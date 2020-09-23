@@ -1,0 +1,18 @@
+body{
+    text-align: center;
+    color:  red;
+    font-family: monospace;
+}
+table,tr,td{
+    border: solid 4px black;
+    width: 200px;
+    height: 40px;
+    margin: auto;
+
+}
+td{
+    background-color: grey;
+    border: outset 3px black;
+}
+
+
