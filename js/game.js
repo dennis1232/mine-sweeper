@@ -16,11 +16,11 @@ var gGame = {
     secsPassed: 0
 }
 function init() {//פונקציה שמאתחלת את המשחק
-    console.log('init game');
+    gBoard = buildBoard(gLevel.size)
+    setMinesNegsCount(gBoard);
+    renderBoard(gBoard)
 }
 
-gBoard = buildBoard(gLevel.size)
-renderBoard(gBoard)
 
 
 function buildBoard(size) {
@@ -34,12 +34,12 @@ function buildBoard(size) {
                 isShown: true,
                 isMine: false,
                 isMarked: false,
-                
+
             }
             gBoard[i][j] = cell;
         }
     }
-    setMinesNegsCount(gBoard);
+
     gBoard[1][1].isMine = true;
     gBoard[2][2].isMine = true;
 
@@ -62,11 +62,11 @@ function renderBoard(board) {//Render the board as a <table> to the page.
                 cell = "💣";
                 ;
             }
-            else if (currCell.isShown && currCell.minesAroundCount >= 0) {
+            else if ( currCell.minesAroundCount >= 0) {
                 cell = currCell.minesAroundCount;
             } else cell = ' '
 
-            
+
             strHTML += '\t<td id="' + tdId + '" class="cell" onclick="cellClicked(this)">' + cell + '</td>\n';
         }
         strHTML += '</tr>\n'
@@ -78,17 +78,18 @@ function renderBoard(board) {//Render the board as a <table> to the page.
 }
 
 function setMinesNegsCount(board) {
-
+    debugger;
     for (var i = 0; i < board.length; i++) {
         for (var j = 0; j < board[0].length; j++) {
             var currCell = board[i][j];
-            currCell.minesAroundCount = countNegsAroundCell(i, j)
+            currCell.minesAroundCount =countNegsAroundCell(i, j); 
+            
         }
     }
     return currCell.minesAroundCount;
 }
 function countNegsAroundCell(rowIdx, collJdx) {
-    
+
     var count = 0
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i >= gBoard.length) continue;
