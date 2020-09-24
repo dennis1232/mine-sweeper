@@ -2,17 +2,48 @@ body{
     text-align: center;
     color:  red;
     font-family: monospace;
+    background-color: rgba(224, 159, 115, 0.815);
 }
-table,tr,td{
+.titles h1,p{
+    font-family: monospace;
+}
+.titles h1{
+    padding:50px ;
+    background-color:rgba(175, 65, 65, 0.404);
+    font-size: 44px;
+    margin: 0px;
+}
+.titles p{
+    margin-top: 0px;
+    position: fixed;
+    left: 12px;
+    font-size: 20px;
+}
+table{
+
     border: solid 4px black;
-    width: 200px;
-    height: 40px;
-    margin: auto;
+    margin: 0 auto;
+    font-size: 20px;
+    
 
 }
 td{
+    width: 40px;
+    height: 40px;
     background-color: grey;
     border: outset 3px black;
+    color: aqua;
 }
-
+td:hover{
+    cursor: pointer;
+}
+.btn button{
+    font-size: x-large;
+    width: 200px; 
+    background-color: red;
+    margin: 10px;
+}
+.btn button:hover{
+    cursor: pointer;
+}
 
