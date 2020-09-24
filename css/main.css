@@ -4,7 +4,7 @@ body{
     font-family: monospace;
     background-color: rgba(224, 159, 115, 0.815);
 }
-.titles h1,p{
+.titles h1,h2{
     font-family: monospace;
 }
 .titles h1{
@@ -13,7 +13,7 @@ body{
     font-size: 44px;
     margin: 0px;
 }
-.titles p{
+.titles h2{
     margin-top: 0px;
     position: fixed;
     left: 12px;
