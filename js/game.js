@@ -66,8 +66,8 @@ function setLevel(elLevelButton) {
         var elMines = document.querySelector('.mines span')
         elMines.innerText = StrMines2
         init();
-    } else if (elLevelButton.innerText === 'World Class') {
-        gSelectedLevel = 'World Class';
+    } else if (elLevelButton.innerText === 'WorldClass') {
+        gSelectedLevel = 'WorldClass';
         gLevel = {
             size: 12,
             mines: 30,
@@ -99,7 +99,7 @@ function buildBoard() {
             board[i][j] = cell;
         }
     }
-    
+
     return board;
 }
 
@@ -143,15 +143,15 @@ function cellMarked(i, j) {
     if (!currCell.isFlagged) {
         currCell.isFlagged = true;
         renderCell(FLAG, i, j);
-            gGame.markedCount++
+        gGame.markedCount++
     } else {
         currCell.isFlagged = false;
         renderCell(EMPTY, i, j);
-            gGame.markedCount--
+        gGame.markedCount--
 
     }
-    
-   var elMarkedCount = document.querySelector('.flagged span');
+
+    var elMarkedCount = document.querySelector('.flagged span');
     elMarkedCount.innerText = gGame.markedCount;
     checkGameWin();
 }
@@ -182,7 +182,7 @@ function cellClicked(cell, i, j) {
             elLive.innerText = StrLive1;
         } else if (gLevel.live === 0) {
             elLive.innerText = 'You out of lives';
-            elLive.style.color ='red';
+            elLive.style.color = 'red';
             allMinesShow()
             gameOver();
 
@@ -218,7 +218,7 @@ function allMinesShow() {
     }
 }
 
-function setMinesNegsCount(board) {  
+function setMinesNegsCount(board) {
     for (var i = 0; i < board.length; i++) {
         for (var j = 0; j < board[0].length; j++) {
             var currCell = board[i][j];
@@ -339,36 +339,50 @@ function startTimer() {
     }, 1000)
 }
 function resetGame() {
-        if (gSelectedLevel === 'Beginner') {
-            gLevel = {
-                size: 4,
-                mines: 2,
-                live: 1,
-            };
-            
-            var StrLive1 = '❤️';
-            var elLive = document.querySelector('.live span')
-            elLive.innerText = StrLive1;
-        } else if (gSelectedLevel === 'Pro') {
-            gLevel = {
-                size: 8,
-                mines: 12,
-                live: 2
-            }
-            var StrLive2 = '❤️❤️'
-            var elLive = document.querySelector('.live span')
-            elLive.innerText = StrLive2
-           
-        } else if (gSelectedLevel === 'World Class') {
-            gLevel = {
-                size: 12,
-                mines: 30,
-                live: 3
-            }
-            var StrLive3 = '❤️❤️❤️'
-            var elLive = document.querySelector('.live span')
-            elLive.innerText = StrLive3
-           
+    if (gSelectedLevel === 'Beginner') {
+        gLevel = {
+            size: 4,
+            mines: 2,
+            live: 1,
+        };
+
+        var StrLive1 = '❤️';
+        var elLive = document.querySelector('.live span');
+        elLive.innerText = StrLive1;
+        var strFlag = '0';
+        var elFlag = document.querySelector('.flagged span');
+        elFlag.innerText = strFlag;
+        gGame.markedCount = 0;
+    } else if (gSelectedLevel === 'Pro') {
+        gLevel = {
+            size: 8,
+            mines: 12,
+            live: 2
         }
-   
+        var StrLive2 = '❤️❤️';
+        var elLive = document.querySelector('.live span');
+        elLive.innerText = StrLive2;
+        var strFlag = '0';
+        var elFlag = document.querySelector('.flagged span');
+        elFlag.innerText = strFlag;
+        gGame.markedCount = 0;
+
+
+    } else if (gSelectedLevel === 'WorldClass') {
+        gLevel = {
+            size: 12,
+            mines: 30,
+            live: 3
+        }
+        var StrLive3 = '❤️❤️❤️';
+        var elLive = document.querySelector('.live span');
+        elLive.innerText = StrLive3;
+        var strFlag = '0';
+        var elFlag = document.querySelector('.flagged span');
+        elFlag.innerText = strFlag;
+        gGame.markedCount = 0;
+
+
+    }
+
 }
