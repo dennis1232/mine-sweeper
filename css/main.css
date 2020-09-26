@@ -1,49 +1,99 @@
-body{
+body {
     text-align: center;
-    color:  red;
+    color: red;
     font-family: monospace;
     background-color: rgba(224, 159, 115, 0.815);
 }
-.titles h1,h2{
+
+.titles h1 {
     font-family: monospace;
+    border-radius: 20px;
 }
-.titles h1{
-    padding:50px ;
-    background-color:rgba(175, 65, 65, 0.404);
+
+.titles h1 {
+    color: darkred;
+    padding: 50px;
+    background-color: rgba(175, 65, 65, 0.404);
     font-size: 44px;
     margin: 0px;
+    text-decoration: underline brown;
 }
-.titles h2{
+
+.titles h2 {
     margin-top: 0px;
     position: fixed;
     left: 12px;
     font-size: 20px;
 }
-table{
 
-    border: solid 4px black;
+table {
+    border: solid 2px black;
     margin: 0 auto;
     font-size: 20px;
-    
-
 }
-td{
+
+td {
     width: 40px;
     height: 40px;
-    background-color: grey;
-    border: outset 3px black;
-    color: aqua;
+    border: outset 1px black;
+    color: black;
 }
-td:hover{
-    cursor: pointer;
-}
-.btn button{
-    font-size: x-large;
-    width: 200px; 
-    background-color: red;
-    margin: 10px;
-}
-.btn button:hover{
+
+td:hover {
     cursor: pointer;
 }
 
+.reset button {
+    font-size: x-large;
+    width: 200px;
+    background-color: rgba(236, 108, 69);
+    margin: 10px;
+    border-radius: 20px;
+}
+
+.reset button:hover {
+    cursor: pointer;
+}
+
+.buttons {
+    width: 115px;
+    height: 40px;
+    background-color: rgba(236, 108, 69, 0.8);
+    border-radius: 20px;
+    border: 3px outset chocolate;
+    font-style: oblique;
+    font-family: monospace;
+    font-weight: 800;
+    font-size: large;
+    color: darkred;
+    cursor: pointer;
+}
+
+.timer {
+    position: fixed;
+    left: 10px;
+    top: 250px;
+    font-size: 20px;
+    border: dotted 2px rgb(248, 125, 111);
+    border-radius: 20px;
+    padding: 10px;
+}
+
+.container{
+    color: darkred;
+    display: flex;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+.live{
+    position: fixed;
+    left: 220px;
+}
+.flagged{
+    position: fixed;
+    left: 110px;
+}
+p{
+    font-size: 20px;
+    color: hsla(7, 64%, 60%, 0.651);
+}
