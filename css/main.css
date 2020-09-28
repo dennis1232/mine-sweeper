@@ -41,6 +41,7 @@ td {
 
 td:hover {
     cursor: pointer;
+    background-color: bisque;
 }
 
 .reset button {
@@ -49,10 +50,11 @@ td:hover {
     background-color: rgba(236, 108, 69);
     margin: 10px;
     border-radius: 20px;
+    cursor: pointer;
 }
 
 .reset button:hover {
-    cursor: pointer;
+    background-color: rgba(206, 129, 129, 0.945);
 }
 
 .buttons {
@@ -68,15 +70,14 @@ td:hover {
     color: darkred;
     cursor: pointer;
 }
+.buttons:hover{
+    background-color: rgb(214, 160, 80);
+}
 
 .timer {
-    position: fixed;
-    left: 10px;
-    top: 250px;
-    font-size: 20px;
-    border: dotted 2px rgb(248, 125, 111);
+    margin-left: 100px;
     border-radius: 20px;
-    padding: 10px;
+    padding: 5px;
 }
 
 .container{
@@ -86,14 +87,29 @@ td:hover {
     font-size: 18px;
 }
 .live{
-    position: fixed;
-    left: 220px;
+    margin-left: 100px;
 }
 .flagged{
-    position: fixed;
-    left: 110px;
+    margin-left: 100px;
 }
 p{
     font-size: 20px;
     color: hsla(7, 64%, 60%, 0.651);
 }
+.hint{
+    color: darkred;
+    border: outset 3px rgba(0, 0, 139, 0.63);
+    border-radius: 20px;
+    font-family: monospace;
+    font-weight: 800;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    cursor: pointer;
+    background-color:rgba(173, 216, 230, 0.5);
+    
+}
+.hint:hover{
+    background-color:rgba(0, 0, 255, 0.5);
+}
+
+

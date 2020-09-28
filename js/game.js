@@ -1,5 +1,5 @@
 'use strict';
-console.log('Hello World');
+
 const FLAG = "🚩";
 const MINE = "💣";
 const NONEGS = "0";
@@ -13,13 +13,15 @@ var gGame = {
     isOn: false,
     shownCount: 0,
     markedCount: 0,
-    secsPassed: 0
+    secsPassed: 0,
+
 }
 var gSelectedLevel = 'Beginner'
 var gLevel = {
     size: 4,
     mines: 2,
-    live: 1
+    live: 1,
+    hints: 1
 }
 function init() {
     resetGame()
@@ -33,6 +35,7 @@ function init() {
     elButton.innerHTML = "😀";
     gGame.isOn = true;
     gGame.shownCount = 0;
+
 }
 
 
@@ -43,21 +46,26 @@ function setLevel(elLevelButton) {
             size: 4,
             mines: 2,
             live: 1,
+            hints: 1
         };
-        init();
         var StrLive1 = '❤️';
-        var elLive = document.querySelector('.live span')
+        var elLive = document.querySelector('.live span');
         elLive.innerText = StrLive1;
         var StrMines1 = '2';
-        var elMines = document.querySelector('.mines span')
+        var elMines = document.querySelector('.mines span');
         elMines.innerText = StrMines1;
+        var strHints = '1';
+        var elHint = document.querySelector('.hint span');
+        elHint.innerText = strHints;
+        init();
 
     } else if (elLevelButton.innerText === 'Pro') {
         gSelectedLevel = 'Pro';
         gLevel = {
             size: 8,
             mines: 12,
-            live: 2
+            live: 2,
+            hints: 2
         }
         var StrLive2 = '❤️❤️'
         var elLive = document.querySelector('.live span')
@@ -65,13 +73,17 @@ function setLevel(elLevelButton) {
         var StrMines2 = '12'
         var elMines = document.querySelector('.mines span')
         elMines.innerText = StrMines2
+        var strHints2 = '2';
+        var elHint = document.querySelector('.hint span');
+        elHint.innerText = strHints2;
         init();
     } else if (elLevelButton.innerText === 'WorldClass') {
         gSelectedLevel = 'WorldClass';
         gLevel = {
             size: 12,
             mines: 30,
-            live: 3
+            live: 3,
+            hints: 3
         }
         var StrLive3 = '❤️❤️❤️'
         var elLive = document.querySelector('.live span')
@@ -79,12 +91,15 @@ function setLevel(elLevelButton) {
         var StrMines3 = '30';
         var elMines = document.querySelector('.mines span')
         elMines.innerText = StrMines3;
+        var strHints3 = '3';
+        var elHint = document.querySelector('.hint span');
+        elHint.innerText = strHints3;
         init();
     }
 }
 
 function buildBoard() {
-    console.log('build board');
+
     var board = []
     for (var i = 0; i < gLevel.size; i++) {
         board[i] = [];
@@ -94,7 +109,8 @@ function buildBoard() {
                 isShown: false,
                 isMine: false,
                 isMarked: false,
-                isFlagged: false
+                isFlagged: false,
+
             }
             board[i][j] = cell;
         }
@@ -122,7 +138,7 @@ function renderBoard(board) {
         strHTML += '</tr>\n'
     }
     var elBoard = document.querySelector('.board');
-    console.log(elBoard);
+
     elBoard.innerHTML = strHTML;
 }
 
@@ -172,9 +188,15 @@ function cellClicked(cell, i, j) {
 
         }
     }
+
     currCell.isShown = true
     if (currCell.isMine) {
+        var elCell = document.querySelector(`#cell-${i}-${j}`);
+        elCell.style.backgroundColor = 'darkred';
+        elCell.style.border = 'outset 2px darkred';
         renderCell(MINE, i, j);
+        gGame.markedCount++
+
         gLevel.live--;
         if (gLevel.live === 2) {
             elLive.innerText = StrLive2;
@@ -183,7 +205,7 @@ function cellClicked(cell, i, j) {
         } else if (gLevel.live === 0) {
             elLive.innerText = 'You out of lives';
             elLive.style.color = 'red';
-            allMinesShow()
+            allMinesShow();
             gameOver();
 
         }
@@ -191,13 +213,19 @@ function cellClicked(cell, i, j) {
 
     if (currCell.minesAroundCount > 0 && !currCell.isMine) {
         cell = currCell.minesAroundCount;
+        var elCell = document.querySelector(`#cell-${i}-${j}`);
+        elCell.style.backgroundColor = '#f87d6f';
+        elCell.style.border = 'outset 2px #f87d6f';
         gGame.shownCount++;
         renderCell(cell, i, j);
     }
     else if (currCell.minesAroundCount === 0 && !currCell.isMine) {
-        cell = NONEGS;
-        showNeighbors(i, j)
+        cell = EMPTY;
+        var elCell = document.querySelector(`#cell-${i}-${j}`);
+        elCell.style.backgroundColor = '#f87d6f';
+        elCell.style.border = 'outset 2px #f87d6f';
         gGame.shownCount++;
+        showNeighbors(i, j)
         renderCell(cell, i, j);
     }
 
@@ -336,7 +364,7 @@ function startTimer() {
         var mins = Math.round(timerDiff % 60);
         var elTimer = document.querySelector('.timer');
         elTimer.innerText = mins + ':' + secs;
-    }, 1000)
+    }, 100)
 }
 function resetGame() {
     if (gSelectedLevel === 'Beginner') {
@@ -344,6 +372,7 @@ function resetGame() {
             size: 4,
             mines: 2,
             live: 1,
+            hint: 1
         };
 
         var StrLive1 = '❤️';
@@ -357,7 +386,8 @@ function resetGame() {
         gLevel = {
             size: 8,
             mines: 12,
-            live: 2
+            live: 2,
+            hints: 2
         }
         var StrLive2 = '❤️❤️';
         var elLive = document.querySelector('.live span');
@@ -372,7 +402,8 @@ function resetGame() {
         gLevel = {
             size: 12,
             mines: 30,
-            live: 3
+            live: 3,
+            hints: 3
         }
         var StrLive3 = '❤️❤️❤️';
         var elLive = document.querySelector('.live span');
@@ -385,4 +416,12 @@ function resetGame() {
 
     }
 
+}
+
+function hint() {
+    var currCell = gBoard[i][j]
+    currCell.isHint = true;
+
+
+    console.log('hint');
 }
