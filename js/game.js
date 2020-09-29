@@ -7,6 +7,7 @@ const EMPTY = " ";
 var gBoard;
 var isFirstClick = true;
 var gTimerInterval = null;
+var gMainTheme = new Audio('sound/BestDramatic.mp3');
 
 
 var gGame = {
@@ -35,6 +36,7 @@ function init() {
     elButton.innerHTML = "😀";
     gGame.isOn = true;
     gGame.shownCount = 0;
+    gMainTheme.pause();
 
 }
 
@@ -290,6 +292,8 @@ function victory() {
     var elButton = document.querySelector('.reset button');
     elButton.innerHTML = "🤑YOU WON🤑"
     gGame.isOn = false;
+    var winnerSound = new Audio('sound/winner.wav');
+    winnerSound.play();
 }
 
 
@@ -298,6 +302,8 @@ function gameOver() {
     gGame.isOn = false;
     var elButton = document.querySelector('.reset button')
     elButton.innerHTML = "😥Restart😥"
+    var looserAudio = new Audio('sound/looser.mp3.wav')
+    looserAudio.play()
 }
 
 function showNeighbors(rowIdx, collJdx) {
@@ -365,6 +371,9 @@ function startTimer() {
         var elTimer = document.querySelector('.timer');
         elTimer.innerText = mins + ':' + secs;
     }, 100)
+    
+        // gMainTheme.play();
+
 }
 function resetGame() {
     if (gSelectedLevel === 'Beginner') {

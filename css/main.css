@@ -2,18 +2,20 @@ body {
     text-align: center;
     color: red;
     font-family: monospace;
-    background-color: rgba(224, 159, 115, 0.815);
+    /* background-color: rgba(224, 159, 115, 0.815); */
+    background: url(../img/bodyBackground.gif) repeat-x;
+    background-color: #9ee7ef;
+    font-family: 'Caveat', cursive;
+    
 }
 
 .titles h1 {
     font-family: monospace;
     border-radius: 20px;
-}
-
-.titles h1 {
-    color: darkred;
-    padding: 50px;
-    background-color: rgba(175, 65, 65, 0.404);
+    text-shadow: 0 -1px 4px #FFF, 0 -2px 10px #ff0, 0 -10px 20px #ff8000, 0 -18px 40px #F00;
+    color: rgb(75, 99, 30);
+    padding: 60px;
+    /* background: url(../img/titleBackGround.png); */
     font-size: 44px;
     margin: 0px;
     text-decoration: underline brown;
@@ -27,7 +29,7 @@ body {
 }
 
 table {
-    border: solid 2px black;
+    border: solid 2px rgb(134, 199, 61);
     margin: 0 auto;
     font-size: 20px;
 }
@@ -38,31 +40,34 @@ td {
     border: outset 1px black;
     color: black;
 }
+td:active{
+    background-color: rgb(146, 201, 233);
+}
 
 td:hover {
     cursor: pointer;
-    background-color: bisque;
+    background-color: rgba(255, 228, 196, 0.63);
 }
 
 .reset button {
     font-size: x-large;
-    width: 200px;
-    background-color: rgba(236, 108, 69);
-    margin: 10px;
-    border-radius: 20px;
+    background: none;
+    border: none;
     cursor: pointer;
+    transition: .5s ease-in-out;
 }
 
 .reset button:hover {
-    background-color: rgba(206, 129, 129, 0.945);
+    transform: rotate(360deg);
 }
 
 .buttons {
+      text-shadow: 0 -1px 4px #FFF, 0 -2px 10px #ff0, 0 -10px 20px #ff8000, 0 -18px 40px #F00;
     width: 115px;
     height: 40px;
-    background-color: rgba(236, 108, 69, 0.8);
+    background-color: #9ee7ef;
     border-radius: 20px;
-    border: 3px outset chocolate;
+    border: 3px outset rgb(99, 177, 84);
     font-style: oblique;
     font-family: monospace;
     font-weight: 800;
@@ -70,33 +75,45 @@ td:hover {
     color: darkred;
     cursor: pointer;
 }
-.buttons:hover{
-    background-color: rgb(214, 160, 80);
+
+.buttons:hover {
+    background-color: rgb(80, 176, 214);
 }
 
 .timer {
     margin-left: 100px;
     border-radius: 20px;
     padding: 5px;
+    font-family: 'Caveat', cursive;
+    box-shadow: darkblue;
+    
 }
 
-.container{
+.container {
     color: darkred;
     display: flex;
     margin-bottom: 20px;
     font-size: 18px;
 }
-.live{
+
+.live {
     margin-left: 100px;
 }
-.flagged{
+
+.flagged {
     margin-left: 100px;
 }
-p{
+
+.copyRights {
+    height: 150px;
+    background: url(../img/titleBackGround.png);
     font-size: 20px;
-    color: hsla(7, 64%, 60%, 0.651);
+    color: rgb(223, 78, 59);
+    padding: 20px;
+    border-radius: 20px;
 }
-.hint{
+
+.hint {
     color: darkred;
     border: outset 3px rgba(0, 0, 139, 0.63);
     border-radius: 20px;
@@ -105,11 +122,9 @@ p{
     margin-bottom: 10px;
     margin-left: 10px;
     cursor: pointer;
-    background-color:rgba(173, 216, 230, 0.5);
-    
-}
-.hint:hover{
-    background-color:rgba(0, 0, 255, 0.5);
+    background-color: rgba(173, 216, 230, 0.5);
 }
 
-
+.hint:hover {
+    background-color: rgba(0, 0, 255, 0.5);
+}
