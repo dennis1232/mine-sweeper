@@ -106,7 +106,7 @@ td:hover {
 
 .copyRights {
     height: 150px;
-    background: url(../img/titleBackGround.png);
+    background: url(../img/titleBackGround.png) ;
     font-size: 20px;
     color: rgb(223, 78, 59);
     padding: 20px;
