@@ -1,47 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mine Sweeper</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+    <title>MINES — 2026</title>
     <link rel="stylesheet" href="css/main.css">
-
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
+<body>
 
-<body var onload="init()" var oncontextmenu="return false">
-    <div class="titles">
-        <h1>Mine<span></span>Sweeper</h1>
-    </div>
-    <div class="container">
-        <div class ="mines">💣:<span>2</span></div>
-        <div class="flagged">🚩:<span>0</span></div>
-        <div class="live">Lives:<span>❤️</span></div>
-        <div class="timer">0:0</div>
-    </div>
-    <div>
-        <button class="hint" onclick="hint(this)">Hints 💡 left:<span>1</span></button> 
-    </div>
-    
-        
-    
+    <div class="game-wrapper">
 
-    <div>
-        <button class="buttons" onclick="setLevel(this)">Beginner</button>
-        <button class="buttons" onclick="setLevel(this)">Pro</button>
-        <button class="buttons" onclick="setLevel(this)">WorldClass</button>
+        <header class="game-header">
+            <div class="logo">
+                <span class="logo-icon">💣</span>
+                <span class="logo-text">MINES</span>
+                <span class="logo-badge">2026</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="mute-btn" title="Toggle Sound">🔊</button>
+                <button class="icon-btn" id="stats-btn" title="Statistics">📊</button>
+            </div>
+        </header>
+
+        <nav class="difficulty-nav">
+            <button class="diff-btn active" data-level="beginner">Beginner</button>
+            <button class="diff-btn" data-level="intermediate">Intermediate</button>
+            <button class="diff-btn" data-level="expert">Expert</button>
+        </nav>
+
+        <div class="game-hud">
+            <div class="hud-item">
+                <span class="hud-icon">💣</span>
+                <span class="hud-value" id="mine-count">0</span>
+            </div>
+            <button class="reset-btn" id="reset-btn" title="New Game  [R]">
+                <span id="reset-icon">🙂</span>
+            </button>
+            <div class="hud-item hud-right">
+                <span class="hud-value" id="timer">0:00</span>
+                <span class="hud-icon">⏱</span>
+            </div>
+        </div>
+
+        <main class="board-container">
+            <div class="board" id="board"></div>
+        </main>
+
+        <footer class="bottom-bar">
+            <div class="lives-display" id="lives-display"></div>
+            <button class="hint-btn" id="hint-btn" title="Reveal a safe cell  [H]">
+                <span>💡</span>
+                <span class="hint-label">Hint</span>
+                <span class="hint-pill" id="hint-count">3</span>
+            </button>
+        </footer>
+
     </div>
-    <div class="reset"><button onclick="init(this)">😀</button></div>
-    <table>
-        <tbody class="board"></tbody>
-    </table>
-    <div class="copyRights">
-        <h2>Made by: Dennis Nemirovski</h2>
+
+    <!-- Win / Lose overlay -->
+    <div class="overlay hidden" id="overlay">
+        <div class="overlay-card">
+            <div class="overlay-icon" id="overlay-icon"></div>
+            <h2 class="overlay-title" id="overlay-title"></h2>
+            <p class="overlay-subtitle" id="overlay-subtitle"></p>
+            <div class="overlay-stats" id="overlay-stats"></div>
+            <div class="overlay-actions">
+                <button class="btn-primary" id="play-again-btn">Play Again</button>
+                <button class="btn-secondary" id="change-level-btn">Change Level</button>
+            </div>
+        </div>
     </div>
+
+    <!-- Stats modal -->
+    <div class="modal hidden" id="stats-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Statistics</h2>
+                <button class="close-btn" id="close-stats">✕</button>
+            </div>
+            <div class="stats-content" id="stats-content"></div>
+            <button class="btn-danger" id="reset-stats-btn">Reset Stats</button>
+        </div>
+    </div>
+
+    <audio id="snd-win" src="sound/winner.wav" preload="auto"></audio>
+    <audio id="snd-lose" src="sound/looser.mp3.wav" preload="auto"></audio>
+
     <script src="js/game.js"></script>
-    <script src="js/util.js"></script>
 </body>
-
 </html>

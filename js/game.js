@@ -1,381 +1,595 @@
 'use strict';
 
-const FLAG = "🚩";
-const MINE = "💣";
-const NONEGS = "0";
-const EMPTY = " ";
-var gBoard;
-var isFirstClick = true;
-var gTimerInterval = null;
-var gMainTheme = new Audio('sound/BestDramatic.mp3');
+/* ============================================================
+   MINES 2026 — Minesweeper
+   Class-based, modern JS. No frameworks required.
+   ============================================================ */
 
+const LEVELS = {
+    beginner:     { rows: 9,  cols: 9,  mines: 10, lives: 2, label: 'Beginner'     },
+    intermediate: { rows: 16, cols: 16, mines: 40, lives: 3, label: 'Intermediate' },
+    expert:       { rows: 16, cols: 30, mines: 99, lives: 3, label: 'Expert'       },
+};
 
-var gGame = {
-    isOn: false,
-    shownCount: 0,
-    markedCount: 0,
-    secsPassed: 0,
+const NUM_CLASS = ['', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8'];
+const HINTS_PER_GAME = 3;
 
-}
-var gSelectedLevel = 'Beginner'
-var gLevel = {
-    size: 4,
-    mines: 2,
-    live: 1,
-}
-function init() {
-    resetGame()
-    clearInterval(gTimerInterval)
-    gBoard = buildBoard();
-    isFirstClick = true;
-    createMines(gLevel, gBoard);
-    setMinesNegsCount(gBoard);
-    renderBoard(gBoard);
-    gGame.isOn = true;
+// ---- Cell size scaling by level ----
+const CELL_SIZES = { beginner: 44, intermediate: 36, expert: 26 };
 
-}
+class MinesweeperGame {
+    constructor() {
+        this._level      = 'beginner';
+        this._board      = [];
+        this._running    = false;
+        this._firstClick = true;
+        this._minesLeft  = 0;
+        this._lives      = 0;
+        this._maxLives   = 0;
+        this._hints      = HINTS_PER_GAME;
+        this._revealed   = 0;
+        this._elapsed    = 0;
+        this._timerID    = null;
+        this._muted      = false;
 
+        this._stats = this._loadStats();
+        this._bindElements();
+        this._bindEvents();
+        this.init();
+    }
 
-function setLevel(elLevelButton) {
-    var elLive = document.querySelector('.live span');
-    var elMines = document.querySelector('.mines span');
-    var StrLive = '❤️';
-    var StrMines = '2';
-    if (elLevelButton.innerText === 'Beginner') {
-        gSelectedLevel = 'Beginner';
-        gLevel = {
-            size: 4,
-            mines: 2,
-            live: 1,
+    /* ---- DOM refs ---- */
+    _bindElements() {
+        this._boardEl      = document.getElementById('board');
+        this._mineCountEl  = document.getElementById('mine-count');
+        this._timerEl      = document.getElementById('timer');
+        this._resetBtn     = document.getElementById('reset-btn');
+        this._resetIcon    = document.getElementById('reset-icon');
+        this._livesEl      = document.getElementById('lives-display');
+        this._hintBtn      = document.getElementById('hint-btn');
+        this._hintCountEl  = document.getElementById('hint-count');
+        this._overlay      = document.getElementById('overlay');
+        this._overlayIcon  = document.getElementById('overlay-icon');
+        this._overlayTitle = document.getElementById('overlay-title');
+        this._overlaySub   = document.getElementById('overlay-subtitle');
+        this._overlayStats = document.getElementById('overlay-stats');
+        this._playAgainBtn = document.getElementById('play-again-btn');
+        this._changeLvlBtn = document.getElementById('change-level-btn');
+        this._statsModal   = document.getElementById('stats-modal');
+        this._statsContent = document.getElementById('stats-content');
+        this._statsBtn     = document.getElementById('stats-btn');
+        this._closeStats   = document.getElementById('close-stats');
+        this._resetStats   = document.getElementById('reset-stats-btn');
+        this._muteBtn      = document.getElementById('mute-btn');
+        this._sndWin       = document.getElementById('snd-win');
+        this._sndLose      = document.getElementById('snd-lose');
+    }
+
+    /* ---- Event listeners ---- */
+    _bindEvents() {
+        // Difficulty tabs
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.level === this._level && !this._firstClick) return;
+                document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this._level = btn.dataset.level;
+                this.init();
+            });
+        });
+
+        this._resetBtn.addEventListener('click', () => this.init());
+
+        this._hintBtn.addEventListener('click', () => this._useHint());
+
+        this._playAgainBtn.addEventListener('click', () => {
+            this._overlay.classList.add('hidden');
+            this.init();
+        });
+        this._changeLvlBtn.addEventListener('click', () => {
+            this._overlay.classList.add('hidden');
+        });
+
+        this._statsBtn.addEventListener('click', () => this._showStats());
+        this._closeStats.addEventListener('click', () => this._statsModal.classList.add('hidden'));
+        this._resetStats.addEventListener('click', () => this._doResetStats());
+        this._statsModal.addEventListener('click', e => {
+            if (e.target === this._statsModal) this._statsModal.classList.add('hidden');
+        });
+
+        this._muteBtn.addEventListener('click', () => this._toggleMute());
+
+        // Block browser context menu on the board
+        this._boardEl.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            if (e.key === 'r' || e.key === 'R') this.init();
+            if (e.key === 'h' || e.key === 'H') this._useHint();
+            if (e.key === 'Escape') {
+                this._overlay.classList.add('hidden');
+                this._statsModal.classList.add('hidden');
+            }
+        });
+    }
+
+    /* ====================================================
+       INIT
+       ==================================================== */
+    init() {
+        const lvl = LEVELS[this._level];
+
+        clearInterval(this._timerID);
+
+        this._board      = [];
+        this._running    = false;
+        this._firstClick = true;
+        this._minesLeft  = lvl.mines;
+        this._lives      = lvl.lives;
+        this._maxLives   = lvl.lives;
+        this._hints      = HINTS_PER_GAME;
+        this._revealed   = 0;
+        this._elapsed    = 0;
+
+        // Update UI counters / icons
+        this._mineCountEl.textContent = this._minesLeft;
+        this._timerEl.textContent     = '0:00';
+        this._resetIcon.textContent   = '🙂';
+        this._hintCountEl.textContent = this._hints;
+        this._hintBtn.disabled        = false;
+
+        // Set cell size CSS variable per level
+        document.documentElement.style.setProperty(
+            '--cell-size', CELL_SIZES[this._level] + 'px'
+        );
+
+        this._renderLives();
+        this._buildAndRenderBoard();
+    }
+
+    /* ====================================================
+       BOARD BUILD
+       ==================================================== */
+    _buildAndRenderBoard() {
+        const { rows, cols } = LEVELS[this._level];
+
+        // Build 2-D data array
+        this._board = Array.from({ length: rows }, (_, r) =>
+            Array.from({ length: cols }, (_, c) => ({
+                r, c,
+                mine: false, revealed: false, flagged: false, count: 0,
+            }))
+        );
+
+        // Build DOM grid
+        this._boardEl.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
+        this._boardEl.innerHTML = '';
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const el = document.createElement('div');
+                el.className = 'cell';
+                el.dataset.r = r;
+                el.dataset.c = c;
+                el.addEventListener('click',       () => this._onCellClick(r, c));
+                el.addEventListener('contextmenu', e  => { e.preventDefault(); this._onFlag(r, c); });
+                this._boardEl.appendChild(el);
+            }
+        }
+    }
+
+    /* ---- Place mines after first click (guarantees safe start area) ---- */
+    _placeMines(safeR, safeC) {
+        const { rows, cols, mines } = LEVELS[this._level];
+
+        // Collect candidate cells (exclude 3×3 around first click)
+        const candidates = [];
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (Math.abs(r - safeR) > 1 || Math.abs(c - safeC) > 1) {
+                    candidates.push([r, c]);
+                }
+            }
+        }
+
+        // Fisher-Yates shuffle, take first `mines` entries
+        for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        candidates.slice(0, mines).forEach(([r, c]) => {
+            this._board[r][c].mine = true;
+        });
+
+        // Compute neighbour counts for all cells
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!this._board[r][c].mine) {
+                    this._board[r][c].count = this._countNeighbourMines(r, c);
+                }
+            }
+        }
+    }
+
+    /* ---- Neighbour helpers ---- */
+    _neighbours(r, c) {
+        const { rows, cols } = LEVELS[this._level];
+        const result = [];
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) result.push([nr, nc]);
+            }
+        }
+        return result;
+    }
+
+    _countNeighbourMines(r, c) {
+        return this._neighbours(r, c).filter(([nr, nc]) => this._board[nr][nc].mine).length;
+    }
+
+    /* ====================================================
+       CLICK HANDLERS
+       ==================================================== */
+    _onCellClick(r, c) {
+        const cell = this._board[r][c];
+
+        if (cell.flagged) return;
+
+        // Chord: clicking a revealed number with enough flags around it
+        if (cell.revealed && cell.count > 0) {
+            this._chord(r, c);
+            return;
+        }
+
+        if (cell.revealed) return;
+        if (!this._firstClick && !this._running) return;
+
+        // First click — place mines now so first click is always safe
+        if (this._firstClick) {
+            this._firstClick = false;
+            this._running    = true;
+            this._placeMines(r, c);
+            this._startTimer();
+        }
+
+        if (cell.mine) {
+            this._hitMine(r, c);
+        } else {
+            this._reveal(r, c);
+            this._checkWin();
+        }
+    }
+
+    _onFlag(r, c) {
+        const cell = this._board[r][c];
+        if (cell.revealed || (!this._running && this._firstClick)) return;
+
+        cell.flagged = !cell.flagged;
+        this._minesLeft += cell.flagged ? -1 : 1;
+        this._mineCountEl.textContent = this._minesLeft;
+
+        const el = this._cellEl(r, c);
+        if (cell.flagged) {
+            el.classList.add('flagged');
+        } else {
+            el.classList.remove('flagged');
+        }
+    }
+
+    /* ---- Reveal a cell (recursive flood-fill for zeros) ---- */
+    _reveal(r, c, delay = 0) {
+        const cell = this._board[r][c];
+        if (cell.revealed || cell.flagged) return;
+
+        cell.revealed = true;
+        this._revealed++;
+
+        const el = this._cellEl(r, c);
+        el.classList.remove('flagged');
+
+        setTimeout(() => {
+            el.classList.add('revealed');
+            if (cell.count > 0) {
+                el.textContent = cell.count;
+                el.classList.add(NUM_CLASS[cell.count]);
+            }
+        }, delay);
+
+        // Flood-fill empty cells with staggered animation
+        if (cell.count === 0) {
+            this._neighbours(r, c).forEach(([nr, nc], i) => {
+                this._reveal(nr, nc, delay + (i + 1) * 14);
+            });
+        }
+    }
+
+    /* ---- Chord click ---- */
+    _chord(r, c) {
+        const cell = this._board[r][c];
+        const nbrs = this._neighbours(r, c);
+        const flagCount = nbrs.filter(([nr, nc]) => this._board[nr][nc].flagged).length;
+
+        if (flagCount !== cell.count) return;
+
+        let hitMine = false;
+        nbrs.forEach(([nr, nc]) => {
+            const nb = this._board[nr][nc];
+            if (!nb.revealed && !nb.flagged) {
+                if (nb.mine) {
+                    this._hitMine(nr, nc);
+                    hitMine = true;
+                } else {
+                    this._reveal(nr, nc);
+                }
+            }
+        });
+
+        if (!hitMine) this._checkWin();
+    }
+
+    /* ---- Hit a mine ---- */
+    _hitMine(r, c) {
+        const el = this._cellEl(r, c);
+        el.classList.add('mine-hit', 'revealed');
+        el.textContent = '💥';
+
+        this._lives--;
+        this._renderLives();
+        this._resetIcon.textContent = '😱';
+
+        if (this._lives <= 0) {
+            setTimeout(() => this._gameOver(false), 350);
+        } else {
+            // Quick recover face
+            setTimeout(() => {
+                if (this._running) this._resetIcon.textContent = '😬';
+            }, 900);
+        }
+    }
+
+    /* ====================================================
+       WIN / LOSE
+       ==================================================== */
+    _checkWin() {
+        const { rows, cols, mines } = LEVELS[this._level];
+        if (this._revealed >= rows * cols - mines) {
+            this._gameOver(true);
+        }
+    }
+
+    _gameOver(won) {
+        this._running = false;
+        clearInterval(this._timerID);
+
+        this._revealAllMines(won);
+
+        if (won) {
+            this._resetIcon.textContent = '🎉';
+            this._saveStats(true, this._elapsed);
+            this._animateWin();
+            setTimeout(() => this._showOverlay(true), 600);
+        } else {
+            this._resetIcon.textContent = '😵';
+            this._saveStats(false, this._elapsed);
+            setTimeout(() => this._showOverlay(false), 800);
+        }
+    }
+
+    _revealAllMines(won) {
+        const { rows, cols } = LEVELS[this._level];
+        let delay = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cell = this._board[r][c];
+                const el   = this._cellEl(r, c);
+                if (cell.mine && !el.classList.contains('mine-hit')) {
+                    const d = delay;
+                    delay += 18;
+                    setTimeout(() => {
+                        el.classList.add('mine-shown', 'revealed');
+                        el.textContent = '💣';
+                    }, d);
+                } else if (!cell.mine && cell.flagged) {
+                    // Wrong flag
+                    el.classList.remove('flagged');
+                    el.classList.add('wrong-flag', 'revealed');
+                    el.textContent = '';
+                }
+            }
+        }
+
+        // Play sound
+        if (!this._muted) {
+            const snd = won ? this._sndWin : this._sndLose;
+            snd.currentTime = 0;
+            snd.play().catch(() => {});
+        }
+    }
+
+    _animateWin() {
+        const cells = Array.from(this._boardEl.querySelectorAll('.cell.revealed'));
+        cells.forEach((el, i) => {
+            setTimeout(() => el.classList.add('won-wave'), i * 8);
+        });
+    }
+
+    _showOverlay(won) {
+        const lvl   = LEVELS[this._level];
+        const stats = this._stats[this._level];
+
+        this._overlayIcon.textContent  = won ? '🏆' : '💥';
+        this._overlayTitle.textContent = won ? 'You Won!' : 'Game Over';
+        this._overlayTitle.style.color = won ? 'var(--green)' : 'var(--red)';
+        this._overlaySub.textContent   = `${lvl.label} — ${won ? 'all mines cleared' : 'better luck next time'}`;
+
+        const fmtTime = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        const bestStr = stats.best ? fmtTime(stats.best) : '—';
+
+        this._overlayStats.innerHTML = `
+            <div class="stat-item">
+                <span class="stat-value">${fmtTime(this._elapsed)}</span>
+                <span class="stat-label">Time</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${stats.wins}</span>
+                <span class="stat-label">Wins</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${bestStr}</span>
+                <span class="stat-label">Best</span>
+            </div>
+        `;
+
+        this._overlay.classList.remove('hidden');
+    }
+
+    /* ====================================================
+       HINT
+       ==================================================== */
+    _useHint() {
+        if (!this._running || this._hints <= 0) return;
+
+        // Find a random safe, unrevealed, unflagged cell
+        const safe = [];
+        for (const row of this._board) {
+            for (const cell of row) {
+                if (!cell.mine && !cell.revealed && !cell.flagged) safe.push(cell);
+            }
+        }
+
+        if (safe.length === 0) return;
+
+        this._hints--;
+        this._hintCountEl.textContent = this._hints;
+        if (this._hints === 0) this._hintBtn.disabled = true;
+
+        const pick = safe[Math.floor(Math.random() * safe.length)];
+        const el   = this._cellEl(pick.r, pick.c);
+
+        el.classList.add('hint-glow');
+        this._resetIcon.textContent = '🔍';
+
+        setTimeout(() => {
+            el.classList.remove('hint-glow');
+            if (this._running) this._resetIcon.textContent = '🙂';
+        }, 3000);
+    }
+
+    /* ====================================================
+       TIMER
+       ==================================================== */
+    _startTimer() {
+        this._timerID = setInterval(() => {
+            this._elapsed++;
+            const m = Math.floor(this._elapsed / 60);
+            const s = this._elapsed % 60;
+            this._timerEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    /* ====================================================
+       LIVES UI
+       ==================================================== */
+    _renderLives() {
+        this._livesEl.innerHTML = '';
+        for (let i = 0; i < this._maxLives; i++) {
+            const span = document.createElement('span');
+            span.className = 'life' + (i >= this._lives ? ' lost' : '');
+            span.textContent = '❤️';
+            this._livesEl.appendChild(span);
+        }
+    }
+
+    /* ====================================================
+       SOUND
+       ==================================================== */
+    _toggleMute() {
+        this._muted = !this._muted;
+        this._muteBtn.textContent = this._muted ? '🔇' : '🔊';
+    }
+
+    /* ====================================================
+       STATS (localStorage)
+       ==================================================== */
+    _defaultStats() {
+        return {
+            beginner:     { wins: 0, losses: 0, best: null, played: 0 },
+            intermediate: { wins: 0, losses: 0, best: null, played: 0 },
+            expert:       { wins: 0, losses: 0, best: null, played: 0 },
         };
-
-    } else if (elLevelButton.innerText === 'Pro') {
-        gSelectedLevel = 'Pro';
-        gLevel = {
-            size: 8,
-            mines: 12,
-            live: 2,
-        }
-        StrLive = '❤️❤️';
-        StrMines = gLevel.mines;
-
-    } else if (elLevelButton.innerText === 'WorldClass') {
-        gSelectedLevel = 'WorldClass';
-        gLevel = {
-            size: 12,
-            mines: 30,
-            live: 3,
-        }
-        StrLive = '❤️❤️❤️';
-        StrMines = gLevel.mines;
     }
-    elLive.innerText = StrLive;
-    elMines.innerText = StrMines;
-    init();
-}
 
-function buildBoard() {
-
-    var board = []
-    for (var i = 0; i < gLevel.size; i++) {
-        board[i] = [];
-        for (var j = 0; j < gLevel.size; j++) {
-            var cell = {
-                minesAroundCount: 0,
-                isShown: false,
-                isMine: false,
-                isMarked: false,
-                isFlagged: false,
-
-            }
-            board[i][j] = cell;
+    _loadStats() {
+        try {
+            return JSON.parse(localStorage.getItem('mines2026-stats')) || this._defaultStats();
+        } catch {
+            return this._defaultStats();
         }
     }
 
-    return board;
-}
-
-
-function renderBoard(board) {
-    var strHTML = '';
-    for (var i = 0; i < board.length; i++) {
-        strHTML += '<tr>\n';
-        for (var j = 0; j < board[0].length; j++) {
-            var currCell = board[i][j];
-            var cell;
-            var tdId = 'cell-' + i + '-' + j;
-            if (currCell.isMine && currCell.isShown) cell = MINE;
-            else if (currCell.isShown && currCell.minesAroundCount > 0) cell = currCell.minesAroundCount;
-            else if (currCell.isShown && currCell.minesAroundCount === 0) {
-                cell = NONEGS;
-            }
-            else cell = EMPTY
-            strHTML += `\t<td class="cell" id="${tdId}" oncontextmenu="cellMarked(${i},${j})"  onclick="cellClicked(this,${i},${j})" >${cell}</td>\n`;
+    _saveStats(won, time) {
+        const s = this._stats[this._level];
+        s.played++;
+        if (won) {
+            s.wins++;
+            if (!s.best || time < s.best) s.best = time;
+        } else {
+            s.losses++;
         }
-        strHTML += '</tr>\n'
+        localStorage.setItem('mines2026-stats', JSON.stringify(this._stats));
     }
-    var elBoard = document.querySelector('.board');
 
-    elBoard.innerHTML = strHTML;
-}
-
-function renderCell(value, i, j) {
-    var elCell = document.querySelector(`#cell-${i}-${j}`);
-    elCell.innerHTML = value;
-
-
-}
-
-
-
-
-function cellMarked(i, j) {
-    if (!gGame.isOn) return;
-    var currCell = gBoard[i][j];
-    if (currCell.isShown && currCell.minesAroundCount !== EMPTY) return;
-    if (!currCell.isFlagged) {
-        currCell.isFlagged = true;
-        renderCell(FLAG, i, j);
-        gGame.markedCount++
-    } else {
-        currCell.isFlagged = false;
-        renderCell(EMPTY, i, j);
-        gGame.markedCount--
+    _doResetStats() {
+        if (!confirm('Reset all statistics?')) return;
+        this._stats = this._defaultStats();
+        localStorage.removeItem('mines2026-stats');
+        this._showStats(); // refresh
     }
-    var elMarkedCount = document.querySelector('.flagged span');
-    elMarkedCount.innerText = gGame.markedCount;
-    checkGameOver();
-}
 
-function cellClicked(cell, i, j) {
-    var currCell = gBoard[i][j];
-    var StrLive1 = '❤️';
-    var StrLive2 = '❤️❤️';
-    var elLive = document.querySelector('.live span');
-    var elCell = document.querySelector(`#cell-${i}-${j}`);
-    if (!gGame.isOn || currCell.isFlagged || currCell.isShown) return;
-    if (gGame.shownCount === 0 && gGame.isOn) {
-        startTimer()
-        if (currCell.isMine) {
-            firstClickNeverAMine(gBoard, i, j);
+    _showStats() {
+        const fmtTime = s => s ? `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}` : '—';
+        const pct     = s => s.played > 0 ? Math.round(s.wins / s.played * 100) + '%' : '—';
 
+        let html = '';
+        for (const key of ['beginner', 'intermediate', 'expert']) {
+            const s   = this._stats[key];
+            const lvl = LEVELS[key];
+            html += `
+                <div class="stats-section">
+                    <div class="stats-section-title">${lvl.label} — ${lvl.rows}×${lvl.cols} · ${lvl.mines} mines</div>
+                    <div class="stats-row">
+                        <span class="stats-row-label">Games Played</span>
+                        <span class="stats-row-val">${s.played}</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-row-label">Win Rate</span>
+                        <span class="stats-row-val">${pct(s)}</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-row-label">Wins / Losses</span>
+                        <span class="stats-row-val">${s.wins} / ${s.losses}</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-row-label">Best Time</span>
+                        <span class="stats-row-val">${fmtTime(s.best)}</span>
+                    </div>
+                </div>
+            `;
         }
+
+        this._statsContent.innerHTML = html;
+        this._statsModal.classList.remove('hidden');
     }
 
-    currCell.isShown = true
-    if (currCell.isMine) {
-        elCell.style.backgroundColor = 'darkred';
-        elCell.style.border = 'outset 2px darkred';
-        renderCell(MINE, i, j);
-        gGame.markedCount++
-
-        gLevel.live--;
-        if (gLevel.live === 2) {
-            elLive.innerText = StrLive2;
-        } else if (gLevel.live === 1) {
-            elLive.innerText = StrLive1;
-        } else if (gLevel.live === 0) {
-            elLive.innerText = 'You out of lives';
-            elLive.style.color = 'red';
-            allMinesShow();
-
-        }
-    }
-
-    if (currCell.minesAroundCount > 0 && !currCell.isMine) {
-        cell = currCell.minesAroundCount;
-        elCell.style.backgroundColor = '#f87d6f';
-        elCell.style.border = 'outset 2px #f87d6f';
-        gGame.shownCount++;
-        renderCell(cell, i, j);
-    }
-    else if (currCell.minesAroundCount === 0 && !currCell.isMine) {
-        cell = EMPTY;
-        elCell.style.backgroundColor = '#f87d6f';
-        elCell.style.border = 'outset 2px #f87d6f';
-        gGame.shownCount++;
-        showNeighbors(i, j)
-        renderCell(cell, i, j);
-    }
-
-    checkGameOver();
-}
-
-
-
-
-function allMinesShow() {
-    for (var i = 0; i < gBoard.length; i++) {
-        for (var j = 0; j < gBoard[0].length; j++) {
-            var currCell = gBoard[i][j];
-            if (currCell.isMine) {
-                renderCell(MINE, i, j);
-            }
-        }
+    /* ====================================================
+       UTIL
+       ==================================================== */
+    _cellEl(r, c) {
+        return this._boardEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
     }
 }
 
-function setMinesNegsCount(board) {
-    for (var i = 0; i < board.length; i++) {
-        for (var j = 0; j < board[0].length; j++) {
-            var currCell = board[i][j];
-            currCell.minesAroundCount = countNegsAroundCell(i, j);
-        }
-    }
-    return currCell.minesAroundCount;
-}
-
-
-
-function countNegsAroundCell(rowIdx, collJdx) {
-    var count = 0
-    for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
-        if (i < 0 || i >= gBoard.length) continue;
-        for (var j = collJdx - 1; j <= collJdx + 1; j++) {
-            if (j < 0 || j >= gBoard[i].length) continue;
-            if (i === rowIdx && j === collJdx) continue;
-            var cell = gBoard[i][j].isMine
-            if (cell) count++
-        }
-    }
-    return count;
-}
-
-function getRandomIntInclusive(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-
-
-
-function checkGameOver() {
-    var elButton = document.querySelector('.reset button')
-    if (gGame.shownCount === (Math.pow(gLevel.size, 2) - gLevel.mines) && gGame.markedCount === gLevel.mines) {
-        elButton.innerHTML = "🤑YOU WON🤑"
-        var winnerSound = new Audio('sound/winner.wav');
-        winnerSound.play();
-        clearInterval(gTimerInterval);
-        gGame.isOn = false;
-    }
-    else if (gLevel.live === 0) {
-        elButton.innerHTML = "😥Restart😥"
-        clearInterval(gTimerInterval);
-        var looserAudio = new Audio('sound/looser.mp3.wav')
-        looserAudio.play()
-        gGame.isOn = false;
-    }
-}
-
-
-function showNeighbors(rowIdx, collJdx) {
-    for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
-        if (i < 0 || i >= gBoard.length) continue;
-        for (var j = collJdx - 1; j <= collJdx + 1; j++) {
-            if (j < 0 || j >= gBoard[i].length) continue;
-            if (i === rowIdx && j === collJdx) continue;
-            var currCell = gBoard[i][j];
-            if (currCell.isShown) continue
-            currCell.isShown = true;
-            if (currCell.minesAroundCount === 0) {
-                currCell.minesAroundCount = NONEGS;
-                showNeighbors(i, j);
-            }
-            currCell = currCell.minesAroundCount;
-            renderCell(currCell, i, j);
-            gGame.shownCount++;
-        }
-    }
-}
-
-function firstClickNeverAMine(board, row, col) {
-    var currCell = board[row][col];
-    var newMineCords = randomizeMines(board);
-    var newCord = newMineCords[getRandomIntInclusive(0, newMineCords.length)]
-    var posI = newCord.i;
-    var posJ = newCord.j;
-    currCell.isMine = false;
-    board[posI][posJ].isMine = true;
-    setMinesNegsCount(board);
-    renderBoard(board)
-}
-function randomizeMines(board) {
-    var emptyCells = [];
-    for (var i = 0; i < board.length; i++) {
-        for (var j = 0; j < board.length; j++) {
-            var pos = { i: i, j: j };
-            var currCell = board[i][j];
-            if (!currCell.isMine) {
-                emptyCells.push(pos);
-            }
-        }
-    }
-    return emptyCells;
-}
-
-function createMines(gLevel, board) {
-    var emptyLocationForMines = randomizeMines(board);
-    for (var i = 0; i < gLevel.mines; i++) {
-        var pos = getRandomIntInclusive(0, (emptyLocationForMines.length - 1));
-        var mineLocation = emptyLocationForMines[pos];
-        board[mineLocation.i][mineLocation.j].isMine = true
-        emptyLocationForMines.splice(pos, 1);
-    }
-}
-function startTimer() {
-    var startTimer = new Date();
-
-    gTimerInterval = setInterval(function () {
-        var endTime = new Date();
-        var timerDiff = ((endTime - startTimer) / 1000);
-        var secs = Math.round(timerDiff % 60);
-        timerDiff = Math.floor(timerDiff / 60);
-        var mins = Math.round(timerDiff % 60);
-        var elTimer = document.querySelector('.timer');
-        elTimer.innerText = mins + ':' + secs;
-    }, 100)
-
-}
-function resetGame() {
-    gGame.shownCount = 0;
-    var elButton = document.querySelector('.reset button');
-    elButton.innerHTML = "😀";
-    var elLive = document.querySelector('.live span');
-    var elFlag = document.querySelector('.flagged span');
-    var strFlag = '0';
-    gGame.markedCount = 0;
-    elFlag.innerText = strFlag;
-    if (gSelectedLevel === 'Beginner') {
-        gLevel = {
-            size: 4,
-            mines: 2,
-            live: 1,
-            hint: 1
-        };
-
-        var StrLive1 = '❤️';
-        elLive.innerText = StrLive1;
-    } else if (gSelectedLevel === 'Pro') {
-        gLevel = {
-            size: 8,
-            mines: 12,
-            live: 2,
-            hints: 2
-        }
-        var StrLive2 = '❤️❤️';
-        elLive.innerText = StrLive2;
-
-
-
-    } else if (gSelectedLevel === 'WorldClass') {
-        gLevel = {
-            size: 12,
-            mines: 30,
-            live: 3,
-            hints: 3
-        }
-        var StrLive3 = '❤️❤️❤️';
-        elLive.innerText = StrLive3;
-
-    }
-
-}
+// Boot
+const game = new MinesweeperGame();
