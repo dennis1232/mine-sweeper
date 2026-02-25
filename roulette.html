@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROULETTE — 2026</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/roulette.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="game-wrapper rou-wrapper">
+
+        <header class="game-header">
+            <div class="logo">
+                <a href="index.html" class="back-link">← Mines</a>
+                <span class="logo-icon">🎰</span>
+                <span class="logo-text">ROULETTE</span>
+                <span class="logo-badge">2026</span>
+            </div>
+            <div class="balance-chip">
+                <span>🪙</span>
+                <span class="balance-amt" id="balance">1,000</span>
+            </div>
+        </header>
+
+        <!-- Wheel + result -->
+        <div class="top-section">
+            <div class="wheel-wrap">
+                <div class="wheel-marker">▼</div>
+                <canvas id="wheel-canvas"></canvas>
+            </div>
+            <div class="result-col">
+                <div class="last-result" id="last-result">
+                    <span class="result-placeholder">Spin to play</span>
+                </div>
+                <div class="history-lbl">History</div>
+                <div class="history-track" id="history-track"></div>
+            </div>
+        </div>
+
+        <!-- Chip selector -->
+        <div class="chip-bar">
+            <div class="chip-row" id="chip-row">
+                <button class="chip" data-value="1">1</button>
+                <button class="chip active" data-value="5">5</button>
+                <button class="chip" data-value="25">25</button>
+                <button class="chip" data-value="100">100</button>
+            </div>
+            <div class="total-bet-box">
+                <span class="total-bet-lbl">Bet</span>
+                <span class="total-bet-val" id="total-bet">0</span>
+            </div>
+        </div>
+
+        <!-- Betting table -->
+        <div class="table-scroll">
+            <div class="bet-table" id="bet-table"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-row">
+            <button class="btn-secondary act-btn" id="clear-btn" disabled>Clear</button>
+            <button class="spin-btn" id="spin-btn" disabled>SPIN</button>
+            <button class="btn-secondary act-btn" id="rebet-btn" disabled>Rebet</button>
+        </div>
+
+    </div>
+
+    <!-- Broke overlay -->
+    <div class="overlay hidden" id="broke-overlay">
+        <div class="overlay-card">
+            <div class="overlay-icon">💸</div>
+            <h2 class="overlay-title" style="color:var(--red)">Broke!</h2>
+            <p class="overlay-subtitle">You're out of chips.</p>
+            <div class="overlay-actions">
+                <button class="btn-primary" id="topup-btn">Get 1,000 Chips</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/roulette.js"></script>
+</body>
+</html>
