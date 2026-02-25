@@ -6,7 +6,7 @@
    ============================================================ */
 
 const LEVELS = {
-    beginner:     { rows: 9,  cols: 9,  mines: 10, lives: 2, label: 'Beginner'     },
+    beginner:     { rows: 6,  cols: 6,  mines: 6,  lives: 2, label: 'Beginner'     },
     intermediate: { rows: 16, cols: 16, mines: 40, lives: 3, label: 'Intermediate' },
     expert:       { rows: 16, cols: 30, mines: 99, lives: 3, label: 'Expert'       },
 };
@@ -14,8 +14,8 @@ const LEVELS = {
 const NUM_CLASS = ['', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8'];
 const HINTS_PER_GAME = 3;
 
-// ---- Cell size scaling by level ----
-const CELL_SIZES = { beginner: 44, intermediate: 36, expert: 26 };
+// Maximum cell size per level — will be shrunk if viewport is too narrow
+const MAX_CELL = { beginner: 52, intermediate: 40, expert: 28 };
 
 class MinesweeperGame {
     constructor() {
@@ -102,6 +102,9 @@ class MinesweeperGame {
         // Block browser context menu on the board
         this._boardEl.addEventListener('contextmenu', e => e.preventDefault());
 
+        // Recalculate cell size on resize (e.g. device rotate)
+        window.addEventListener('resize', () => this._applyCellSize(), { passive: true });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', e => {
             if (e.key === 'r' || e.key === 'R') this.init();
@@ -138,13 +141,24 @@ class MinesweeperGame {
         this._hintCountEl.textContent = this._hints;
         this._hintBtn.disabled        = false;
 
-        // Set cell size CSS variable per level
-        document.documentElement.style.setProperty(
-            '--cell-size', CELL_SIZES[this._level] + 'px'
-        );
+        this._applyCellSize();
 
         this._renderLives();
         this._buildAndRenderBoard();
+    }
+
+    /* Compute the right cell size so the board always fits the screen */
+    _applyCellSize() {
+        const { cols } = LEVELS[this._level];
+        const max = MAX_CELL[this._level];
+
+        // Available board width = viewport minus wrapper padding (40px) and board padding (36px)
+        const gap       = 3; // px between cells
+        const available = window.innerWidth - 40 - 36 - (cols - 1) * gap;
+        const fromVW    = Math.floor(available / cols);
+        const size      = Math.max(24, Math.min(max, fromVW));
+
+        document.documentElement.style.setProperty('--cell-size', size + 'px');
     }
 
     /* ====================================================
@@ -171,11 +185,38 @@ class MinesweeperGame {
                 el.className = 'cell';
                 el.dataset.r = r;
                 el.dataset.c = c;
-                el.addEventListener('click',       () => this._onCellClick(r, c));
-                el.addEventListener('contextmenu', e  => { e.preventDefault(); this._onFlag(r, c); });
+                this._addCellListeners(el, r, c);
                 this._boardEl.appendChild(el);
             }
         }
+    }
+
+    /* Touch-aware event listeners per cell */
+    _addCellListeners(el, r, c) {
+        // Desktop right-click → flag
+        el.addEventListener('contextmenu', e => { e.preventDefault(); this._onFlag(r, c); });
+
+        // Mobile long-press → flag; short tap → reveal
+        let timer      = null;
+        let longFired  = false;
+
+        el.addEventListener('touchstart', () => {
+            longFired = false;
+            timer = setTimeout(() => {
+                longFired = true;
+                this._onFlag(r, c);
+                if (navigator.vibrate) navigator.vibrate(40);
+            }, 450);
+        }, { passive: true });
+
+        el.addEventListener('touchmove',  () => { clearTimeout(timer); }, { passive: true });
+        el.addEventListener('touchend',   () => { clearTimeout(timer); });
+
+        // Click fires on both desktop and mobile tap; suppress after long-press
+        el.addEventListener('click', () => {
+            if (longFired) { longFired = false; return; }
+            this._onCellClick(r, c);
+        });
     }
 
     /* ---- Place mines after first click (guarantees safe start area) ---- */
