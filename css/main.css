@@ -679,11 +679,58 @@ kbd {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
 
-/* ---- Responsive ---- */
-@media (max-width: 500px) {
-    :root { --cell-size: 34px; }
-    .diff-btn { padding: 7px 14px; font-size: 12px; }
-    .game-wrapper { gap: 10px; padding: 16px 12px 24px; }
+/* ---- Cell touch targets — prevent double-tap zoom, improve responsiveness ---- */
+.cell {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Board horizontal scroll on small screens ---- */
+.board-container {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ---- Responsive — medium phones (≤ 480px) ---- */
+@media (max-width: 480px) {
+    .game-wrapper {
+        gap: 10px;
+        padding: 14px 10px 22px;
+    }
+
+    /* Difficulty nav: scroll horizontally if needed */
+    .difficulty-nav {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        max-width: 100%;
+        justify-content: flex-start;
+    }
+    .difficulty-nav::-webkit-scrollbar { display: none; }
+    .diff-btn { flex-shrink: 0; padding: 7px 16px; font-size: 12px; }
+
+    .game-hud { padding: 10px 14px; }
+    .hud-value { font-size: 17px; min-width: 40px; }
+    .reset-btn { width: 44px; height: 44px; font-size: 20px; }
+
+    .board-container { padding: 12px; border-radius: var(--r-lg); }
+
     .hint-label { display: none; }
-    .hud-value { font-size: 18px; }
+
+    .overlay-card { padding: 30px 22px; }
+    .overlay-icon { font-size: 52px; }
+    .overlay-title { font-size: 24px; }
+    .overlay-stats { gap: 18px; padding: 12px; }
+    .stat-value { font-size: 18px; }
+    .overlay-actions { flex-direction: column; }
+    .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+
+    .modal-card { padding: 20px 16px; }
+}
+
+/* ---- Responsive — small phones (≤ 360px) ---- */
+@media (max-width: 360px) {
+    .logo-text { font-size: 17px; }
+    .logo-badge { display: none; }
+    .hud-icon { display: none; }
+    .hud-value { min-width: 36px; }
 }
